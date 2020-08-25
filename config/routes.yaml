@@ -1,0 +1,37 @@
+index:
+    path: /
+    controller: App\Controller\SecurityController::index
+
+login:
+    path: /login
+    controller: App\Controller\SecurityController::login
+    options:
+      expose: true
+
+login-check:
+  path: /login-check
+  controller: App\Controller\SecurityController::loginCheck
+
+logout:
+  path: /logout
+  controller: App\Controller\SecurityController::logout
+
+list:
+  path: /list
+  controller: App\Controller\UserController::index
+
+edit:
+  path: /edit/{id}
+  controller: App\Controller\UserController::edit
+
+add:
+  path: /add
+  controller: App\Controller\UserController::add
+
+delete:
+  path: /delete/{id}
+  controller: App\Controller\UserController::delete
+
+resetPassword:
+  path: /resetPassword/{id}
+  controller: App\Controller\UserController::resetPassword
