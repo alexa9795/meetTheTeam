@@ -7,6 +7,7 @@ use App\Form\ResetPasswordType;
 use App\Form\UserEditType;
 use App\Repository\UserRepository;
 use App\Service\UploaderHelper;
+use App\Service\UserService;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -22,6 +23,12 @@ class UserController extends AbstractController
      */
     public function index(Request $request, Security $security)
     {
+        if (!$security->getUser()) {
+            $this->addFlash('error', 'User should be logged in to access the list of team members!');
+
+            return $this->redirectToRoute('app_login');
+        }
+
         $entityManager = $this->getDoctrine()->getManager();
 
         /** @var UserRepository $userRepository */
@@ -47,8 +54,14 @@ class UserController extends AbstractController
     /**
      * @Route("/edit/{id}", name="edit")
      */
-    public function edit(int $id, Request $request, UploaderHelper $uploaderHelper)
+    public function edit(int $id, Request $request, UploaderHelper $uploaderHelper, Security $security)
     {
+        if (!$security->getUser()) {
+            $this->addFlash('error', 'User should be logged in order to edit a team member!');
+
+            return $this->redirectToRoute('app_login');
+        }
+
         /** @var EntityManager $em */
         $em = $this->getDoctrine()->getManager();
 
@@ -93,8 +106,14 @@ class UserController extends AbstractController
     /**
      * @Route("/add", name="add")
      */
-    public function add(Request $request, UploaderHelper $uploaderHelper, Security $security)
+    public function add(Request $request, UploaderHelper $uploaderHelper, Security $security, UserService $userService)
     {
+        if (!$security->getUser()) {
+            $this->addFlash('error', 'User should be logged in order to add a team member!');
+
+            return $this->redirectToRoute('app_login');
+        }
+
         $user = new User();
 
         $form = $this->createForm(UserEditType::class, $user);
@@ -117,12 +136,15 @@ class UserController extends AbstractController
 
             $user->setCreatedBy($security->getUser()->getEmail());
 
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($user);
-            $em->flush();
+            if (!$userService->checkIfUserExists($user->getEmail())) {
+                $em = $this->getDoctrine()->getManager();
+                $em->persist($user);
+                $em->flush();
 
-
-            return $this->redirectToRoute('list');
+                return $this->redirectToRoute('list');
+            } else {
+                $this->addFlash('error', 'Email already registered in database!');
+            }
         }
 
         return $this->render('user/add.html.twig', [
@@ -133,8 +155,14 @@ class UserController extends AbstractController
     /**
      * @Route("/delete/{id}", name="delete")
      */
-    public function delete(int $id, Request $request)
+    public function delete(int $id, Request $request, Security $security)
     {
+        if (!$security->getUser()) {
+            $this->addFlash('error', 'User should be logged in order to delete a team member!');
+
+            return $this->redirectToRoute('app_login');
+        }
+
         $em = $this->getDoctrine()->getManager();
         $user = $em->getRepository(User::class)->find($id);
 
@@ -151,8 +179,14 @@ class UserController extends AbstractController
     /**
      * @Route("/resetPassword/{id}", name="resetPassword")
      */
-    public function resetPassword(int $id, Request $request, UserPasswordEncoderInterface $passwordEncoder)
+    public function resetPassword(int $id, Request $request, UserPasswordEncoderInterface $passwordEncoder, Security $security)
     {
+        if (!$security->getUser()) {
+            $this->addFlash('error', 'User should be logged in to order to reset password!');
+
+            return $this->redirectToRoute('app_login');
+        }
+
         /** @var EntityManager $em */
         $em = $this->getDoctrine()->getManager();
 
